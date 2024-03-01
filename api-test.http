@@ -1,0 +1,13 @@
+POST /api/v1/cats
+Host: localhost:28080
+Content-Type: application/json
+
+{
+  "name": "John Doe",
+  "age": 5
+}
+
+###
+GET /api/v1/cats
+Host: localhost:28080
+Accept: application/json

@@ -1,0 +1,56 @@
+---
+variables:
+  PROJECT: right-devops-
+  MAVEN_CLI_OPTS: "-B"
+  MAVEN_OPTS: "-Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository"
+  REGISTRY_OPTS: "-DREGISTRY_LOGIN=gitlab-ci-token -DREGISTRY_PASSWORD=$CI_JOB_TOKEN -DREGISTRY_URL=$CI_REGISTRY"
+  DOCKER_HOST: tcp://docker:2375
+  DOCKER_TLS_CERTDIR: ""
+  DOCKER_CERT_PATH: "$DOCKER_TLS_CERTDIR/client"
+  VAULT_TOKEN_ROLE_DEV: zen-dev
+  VAULT_WERF_SECRET_KEY_PATH_DEV: zen/right-devops/dev/werf
+  VAULT_TOKEN_ROLE_PROD: zen-prod
+  VAULT_WERF_SECRET_KEY_PATH_PROD: zen/right-devops/prod/werf
+
+stages:
+  - migrate-db
+
+.migrate-db-vault-public-env: &migrate-db-vault-public-env
+  VAULT_AUTH_ROLE: "gitlab-zen"
+  VAULT_SERVER_URL: "https://zen-code.ru"
+
+.migrate-db-vault-private-env: &migrate-db-vault-private-env
+  VAULT_AUTH_ROLE: "gitlab-zen"
+  VAULT_SERVER_URL: "https://zen-code.ru"
+
+.migrate-db:
+  stage: migrate-db
+  image: maven-3-8-4-openjdk-17-master
+  variables:
+    VAULT_AUTH_PATH: "id_token_jwt"
+  id_tokens:
+    VAULT_ID_TOKEN:
+      aud: https://zen-code.ru
+  script:
+    - mvn -version
+    - mvn clean package -DskipTests
+    - mvn liquibase:status -Dliquibase.verbose=true
+    - mvn liquibase:updateSQL -Dliquibase.verbose=true -Dliquibase.logging=debug
+    - mvn liquibase:update -Dliquibase.verbose=true -Dliquibase.logging=debug
+  when: manual
+
+migrate-db-dev:
+  extends: .migrate-db
+  variables:
+    DB_URL: "jdbc:postgresql://localhost:25432/rightdevops"
+    DB_USERNAME: pg_admin
+    <<: *migrate-db-vault-public-env
+  secrets:
+    LIQUIBASE_PASSWORD:
+      vault:
+        engine:
+          name: kv-v2
+          path: gitlab
+        field: SPRING_DATASOURCE_PASSWORD
+        path: zen/dev/env
+      file: false

@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: right-devops-config
+data:
+  application.properties: |
+    spring.application.name=right-devops
+    spring.jpa.show-sql=true
+    spring.jpa.properties.hibernate.format_sql=true
+    spring.liquibase.change-log=db/changelog/db.changelog-master.xml
+    spring.datasource.url=jdbc:postgresql://localhost:25432/rightdevops
+    spring.datasource.driver-class-name=org.postgresql.Driver
+    spring.sql.init.encoding=UTF-8
+    spring.jpa.database-platform=org.hibernate.dialect.PostgreSQLDialect
+    logging.level.org.hibernate.SQL=DEBUG
+    logging.level.org.hibernate.type.descriptor.sql.BasicBinder=TRACE
+

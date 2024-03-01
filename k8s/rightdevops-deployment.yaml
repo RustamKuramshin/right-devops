@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: right-devops-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: right-devops
+  template:
+    metadata:
+      labels:
+        app: right-devops
+    spec:
+      containers:
+        - name: right-devops
+          image: localhost:5000/right-devops:1.0.0
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - name: config-volume
+              mountPath: /config
+          env:
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: right-devops-secrets
+                  key: datasource.username
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: right-devops-secrets
+                  key: datasource.password
+      volumes:
+        - name: config-volume
+          configMap:
+            name: right-devops-config

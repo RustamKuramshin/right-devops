@@ -1,0 +1,68 @@
+version: '3'
+
+services:
+
+  app:
+    build:
+      dockerfile: Dockerfile
+    container_name: app
+    depends_on:
+      - postgres
+    ports:
+      - "28080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker-compose
+
+  postgres:
+    build:
+      dockerfile: ./Dockerfile
+      context: postgres
+    container_name: postgres
+    ports:
+      - "25432:5432"
+    restart: always
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres/postgresql.conf:/etc/postgresql/postgresql.conf
+    environment:
+      - POSTGRES_USER=pgadmin
+      - POSTGRES_PASSWORD=pgadmin
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf
+
+  grafana:
+    build: './monitoring/config/grafana'
+    container_name: grafana
+    ports:
+      - "23000:3000"
+    restart: always
+    volumes:
+      - ./monitoring/grafana:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    ports:
+      - "29090:9090"
+    restart: always
+    volumes:
+      - ./monitoring/config/prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--log.level=debug'
+
+  wiremock:
+    image: wiremock/wiremock
+    container_name: wiremock
+    ports:
+      - "28081:8080"
+    restart: always
+    volumes:
+      - ./wiremock/__files:/home/wiremock/__files
+      - ./wiremock:/home/wiremock
+    entrypoint: ["/docker-entrypoint.sh", "--print-all-network-traffic", "--disable-gzip", "--verbose"]
+
+volumes:
+  postgres_data:

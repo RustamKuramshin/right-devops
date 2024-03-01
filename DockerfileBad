@@ -1,0 +1,9 @@
+FROM openjdk:17.0.2-slim
+
+WORKDIR /app
+
+COPY ./build/libs/right-devops-1.0.0.jar /app/right-devops.jar
+
+EXPOSE 8080
+
+ENTRYPOINT ["java", "-jar", "right-devops.jar"]
